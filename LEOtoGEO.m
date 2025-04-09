@@ -48,11 +48,18 @@ X_guess = [coeffs_guess(1)            % a0
            coeffs_guess(2*nr+2)       % c0
            coeffs_guess(2*nr+7:end)]; % c3, d3, ... cntheta, dntheta
 
-% TODO Put for loop here to iterate over weight
-weight = 0;
+% Adding DeltaV penalty
+weights = [0, 0.001, 0.01, 0.1, 1];  % test weights for penalty
+t_DP = linspace(0,T,nDP);
+colors = lines(length(weights)); %colors for different pentalties
+
+figure(1); hold on; title('Trajectories'); xlabel('X (DU)'); ylabel('Y (DU)');
+figure(2); hold on; title('Thrust Profiles'); xlabel('t (TU)'); ylabel('T_a (DU/TU^2)');
 
 % FFS Optimization:
-t_DP = linspace(0,T,nDP);
+for i = 1:length(weights)
+    weight = weights(i);
+    
 deltaV_only = false;
 [X_opt,fit] = fmincon(@(X)objectiveFun(X,t_DP,nr,ntheta,BC,Isp,m0,weight,deltaV_only), ...
                 X_guess, ...
@@ -72,16 +79,21 @@ t = linspace(0,T,1000);
 [Ta,r,theta] = trajectoryFFS(t,a0_opt,a_opt,b_opt,c0_opt,c_opt,d_opt);
 [x,y] = pol2cart(theta,r);
 
-% TODO Plot every case
-% Plots
-figure
-plot(x,y,'k')
-xlabel('X (DU)')
-ylabel('Y (DU)')
+% Plot trajectory
+figure(1)
+plot(x,y,'Color',colors(i,:), 'DisplayName', sprintf('w = %.3f', weight));
 
-figure
-plot(t,Ta,'k')
+% Plot thrust profile
+figure(2)
+plot(t,Ta,'Color',colors(i,:), 'DisplayName', sprintf('w = %.3f', weight));
+
+end
+
+figure(1)
+legend
+axis equal
+
+figure(2)
 yline(Ta_max,'--k')
 yline(-Ta_max,'--k')
-xlabel('t (TU)')
-ylabel('T_a (DU/TU^2)')
+legend
